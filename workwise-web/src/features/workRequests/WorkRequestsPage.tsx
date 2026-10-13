@@ -5,6 +5,7 @@ import {
   Button,
   LinearProgress,
   Paper,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -15,6 +16,7 @@ import {
   TableRow,
   Typography,
 } from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
 import InboxIcon from '@mui/icons-material/InboxOutlined'
 import { useListWorkRequestsQuery } from './workRequestsApi'
 import { useDebouncedValue } from '../../hooks/useDebouncedValue'
@@ -22,6 +24,7 @@ import { WorkRequestFilters } from './components/WorkRequestFilters'
 import { PriorityChip, StatusChip } from './components/Chips'
 import { getErrorMessage } from './apiErrors'
 import { formatDate, isOverdue } from './format'
+import { CreateWorkRequestDialog } from './components/CreateWorkRequestDialog'
 import type { Status } from './types'
 
 export function WorkRequestsPage() {
@@ -29,6 +32,8 @@ export function WorkRequestsPage() {
   const [status, setStatus] = useState<Status | ''>('')
   const [page, setPage] = useState(0) // MUI pagination is 0-based, the API is 1-based
   const [pageSize, setPageSize] = useState(10)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [toast, setToast] = useState<{ message: string; severity: 'success' | 'error' } | null>(null)
   const debouncedSearch = useDebouncedValue(search, 400)
 
   const { data, isLoading, isFetching, isError, error, refetch } = useListWorkRequestsQuery({
@@ -56,6 +61,9 @@ export function WorkRequestsPage() {
             setPage(0)
           }}
         />
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateOpen(true)}>
+          New request
+        </Button>
       </Stack>
 
       <Paper variant="outlined">
@@ -148,6 +156,25 @@ export function WorkRequestsPage() {
           }}
         />
       </Paper>
+
+      <CreateWorkRequestDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={(title) => setToast({ message: `Created "${title}"`, severity: 'success' })}
+      />
+
+      <Snackbar
+        open={!!toast}
+        autoHideDuration={4000}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        {toast ? (
+          <Alert severity={toast.severity} variant="filled" onClose={() => setToast(null)}>
+            {toast.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
     </Stack>
   )
 }
